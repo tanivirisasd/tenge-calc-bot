@@ -4,6 +4,7 @@ import random
 import os
 import datetime
 import logging
+import pytz
 from dotenv import load_dotenv
 
 # ====== НАСТРОЙКИ ======
@@ -21,6 +22,9 @@ bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
 # Шуточный курс: 3 рубля = 1 000 000 тенге
 RUB_TO_KZT_RATE = 1000000 / 3
+
+# Часовой пояс Тюмени
+YOUR_TZ = pytz.timezone('Asia/Yekaterinburg')
 
 # ====== СТАРТ / ПОМОЩЬ ======
 @bot.message_handler(commands=['start', 'help'])
@@ -127,8 +131,8 @@ def handle_message(message):
         rub_formatted = f"{amount:,.2f}".replace(',', ' ').replace('.', ',')
         tenge_formatted = f"{tenge:,.2f}".replace(',', ' ').replace('.', ',')
 
-        # Текущее время
-        now = datetime.datetime.now().strftime("%H:%M:%S")
+        # Текущее время по Тюмени
+        now = datetime.datetime.now(YOUR_TZ).strftime("%H:%M:%S")
 
         jokes = [
             "Это целое состояние!",
