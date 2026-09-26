@@ -4,7 +4,7 @@ import random
 import os
 import datetime
 import logging
-import pytz
+from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 
 # ====== НАСТРОЙКИ ======
@@ -22,8 +22,8 @@ bot = telebot.TeleBot(TELEGRAM_TOKEN)
 # Новый золотой курс: 1 рубль = 5 тенге
 RUB_TO_KZT_RATE = 5
 
-# Часовой пояс Тюмени
-YOUR_TZ = pytz.timezone('Asia/Yekaterinburg')
+# Часовой пояс Тюмени (через zoneinfo, без pytz)
+YOUR_TZ = ZoneInfo('Asia/Yekaterinburg')
 
 # ====== СТАРТ / ПОМОЩЬ ======
 @bot.message_handler(commands=['start', 'help'])
@@ -133,7 +133,6 @@ def handle_message(message):
         # Текущее время по Тюмени
         now = datetime.datetime.now(YOUR_TZ).strftime("%H:%M:%S")
 
-        # Золотые шутки
         jokes = [
             "ЗОЛОТАЯ ЕЛДА НАСТУПИЛА!",
             "Чингисхан одобряет этот курс!",
@@ -143,7 +142,6 @@ def handle_message(message):
         ]
         joke = random.choice(jokes)
 
-        # Золотое оформление
         answer = (
             "🌟✨━━━━━━━━━━━━━━━━━━✨🌟\n"
             "🏆  *ЗОЛОТАЯ ЕЛДА НАСТУПИЛА!*  🏆\n"
@@ -160,6 +158,28 @@ def handle_message(message):
 
         bot.reply_to(message, answer, parse_mode='Markdown')
         return
+
+# ====== ОТПРАВКА СООБЩЕНИЯ В ГРУППУ ПРИ ЗАПУСКЕ ======
+GROUP_CHAT_ID = os.getenv('GROUP_CHAT_ID')
+
+if GROUP_CHAT_ID:
+    try:
+        gold_message = (
+            "🌟✨━━━━━━━━━━━━━━━━━━✨🌟\n"
+            "🏆  *КУРС ТЕНГЕ ОБНОВЛЁН!*  🏆\n"
+            "🌟✨━━━━━━━━━━━━━━━━━━✨🌟\n\n"
+            "💰  *НОВЫЙ КУРС:* 1 РУБ = 5 ТЕНГЕ  💰\n"
+            "🔥  _ЗОЛОТАЯ ЕЛДА НАСТУПИЛА!_  🔥\n"
+            "💎  _НЕ ЗРЯ МЕНЯ ЧИНГИСХАН ПИСЮНИЛ!_  💎\n\n"
+            "🪙💵🪙💵🪙💵🪙💵🪙💵🪙\n"
+            "🌟✨━━━━━━━━━━━━━━━━━━✨🌟"
+        )
+        bot.send_message(int(GROUP_CHAT_ID), gold_message, parse_mode='Markdown')
+        logging.info("Сообщение о курсе отправлено в группу.")
+    except Exception as e:
+        logging.error(f"Не удалось отправить сообщение в группу: {e}")
+else:
+    logging.warning("GROUP_CHAT_ID не задан — сообщение в группу не отправлено.")
 
 logging.info("Бот запущен и работает...")
 bot.polling(none_stop=True)
