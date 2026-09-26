@@ -3,9 +3,19 @@ import re
 import random
 import os
 import datetime
+import logging
+from dotenv import load_dotenv
 
 # ====== НАСТРОЙКИ ======
-TELEGRAM_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '8857992697:AAHTUwGbJnPcqZrI1okAfM-_RYkhnGACtmk')
+logging.basicConfig(level=logging.INFO)
+
+# Загружаем переменные из .env
+load_dotenv()
+
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+
+if not TELEGRAM_TOKEN:
+    raise ValueError("Токен не найден! Проверьте файл .env")
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
@@ -105,11 +115,14 @@ def handle_message(message):
 
     # --- Калькулятор (если есть "руб" или "₽") ---
     if re.search(r'руб', text) or '₽' in text:
-        match = re.search(r'(\d+[.,]?\d*)', text)
+        match = re.search(r'(\d[\d\s]*[.,]?\d*)', text)
         if not match:
             bot.reply_to(message, "Напиши сумму, например: 100 руб")
             return
-        amount = float(match.group(1).replace(',', '.'))
+        amount = float(match.group(1).replace(' ', '').replace(',', '.'))
+        if amount < 0:
+            bot.reply_to(message, "Отрицательные суммы не принимаю 😄")
+            return
         tenge = amount * RUB_TO_KZT_RATE
         rub_formatted = f"{amount:,.2f}".replace(',', ' ').replace('.', ',')
         tenge_formatted = f"{tenge:,.2f}".replace(',', ' ').replace('.', ',')
@@ -142,5 +155,5 @@ def handle_message(message):
         bot.reply_to(message, answer, parse_mode='Markdown')
         return
 
-print("Бот запущен и работает...")
+logging.info("Бот запущен и работает...")
 bot.polling(none_stop=True)
